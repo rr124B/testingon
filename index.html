@@ -4,44 +4,41 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#222">
-<title>Koç v2.0</title>
+<title>Koç v2.1</title>
 <style>
     body { font-family: sans-serif; background-color: #222; color: #eee; margin: 0; padding: 5px; padding-bottom: 60px; }
     h1 { font-size: 18px; text-align: center; color: #ff9900; margin-bottom: 10px; }
     
     /* Menü Navigasyon */
-    .nav-bar { position: fixed; bottom: 0; left: 0; width: 100%; background: #444; border-top: 1px solid #666; height: 50px; display: flex; }
-    .nav-btn { flex: 1; background: none; border: none; color: #aaa; font-size: 12px; font-weight: bold; }
-    .active-nav { color: #ff9900; background: #333; }
+    .nav-bar { position: fixed; bottom: 0; left: 0; width: 100%; background: #444; border-top: 1px solid #666; height: 50px; display: flex; z-index: 999; }
+    .nav-btn { flex: 1; background: none; border: none; color: #aaa; font-size: 11px; font-weight: bold; padding: 0; }
+    .active-nav { color: #ff9900; background: #333; border-top: 2px solid #ff9900; }
 
     .content { display: none; padding: 5px; margin-bottom: 20px; }
     .show { display: block; }
 
-    /* Kartlar */
+    /* Kart Tasarımı */
     .card { background: #333; padding: 10px; border-radius: 5px; margin-bottom: 10px; border: 1px solid #444; }
-    .item { border-bottom: 1px solid #555; padding: 8px 0; font-size: 14px; }
+    .item { border-bottom: 1px solid #555; padding: 10px 0; font-size: 14px; line-height: 1.4; }
     .check-box { display: inline-block; width: 20px; height: 20px; background: #eee; margin-right: 10px; vertical-align: middle; border-radius: 3px; }
     .checked { background: #00cc00; }
     
-    .btn-action { width: 100%; padding: 12px; background: #006600; color: white; border: none; border-radius: 5px; font-size: 16px; margin-top: 5px; }
-    .malzeme-detay { color: #999; font-size: 11px; display: block; margin-left: 30px; margin-top: 2px; }
+    .btn-action { width: 100%; padding: 12px; background: #006600; color: white; border: none; border-radius: 5px; font-size: 16px; margin-top: 5px; cursor: pointer; }
+    
+    /* Ölçü Vurgusu */
+    .olcu { color: #ffcc00; font-weight: bold; }
     
     /* Geçmiş Listesi */
     .history-item { background: #444; padding: 10px; margin-bottom: 5px; border-radius: 3px; font-size: 12px; }
     .history-date { color: #ff9900; font-weight: bold; border-bottom: 1px solid #666; display: block; margin-bottom: 5px; }
-
-    /* Bildirim Butonu */
-    #notifBtn { background: #004488; margin-bottom: 10px; font-size: 12px; padding: 8px; }
 </style>
 </head>
 <body>
 
-<h1>Koç v2.0</h1>
+<h1>Koç v2.1</h1>
 
 <div id="sayfa-diyet" class="content show">
-    <button id="notifBtn" onclick="bildirimIzniIste()" class="btn-action">🔔 Bildirimleri Aç (Modern Telefonlar)</button>
     <div class="card">
         <div style="text-align:right; font-size:11px; color:#888" id="tarihGostergesi"></div>
         <div id="gunlukMenu"></div>
@@ -54,55 +51,98 @@
     <div class="card" id="antrenmanListesi"></div>
 </div>
 
-<div id="sayfa-market" class="content">
-    <h3>Malzemeler</h3>
-    <div class="card" id="alisverisListesi"></div>
+<div id="sayfa-olcu" class="content">
+    <h3>Mutfak Ölçüleri (Ne Kadar?)</h3>
+    <div style="font-size:12px; color:#aaa; margin-bottom:5px;">Malzemeleri hazırlarken bu ölçülere uy:</div>
+    <div class="card" id="olcuListesi"></div>
 </div>
 
 <div id="sayfa-gecmis" class="content">
     <h3>Geçmiş Kayıtlar</h3>
-    <button onclick="gecmisiTemizle()" style="background:#444; color:#fff; border:1px solid #666; width:100%; padding:5px;">Geçmişi Sil</button>
+    <button onclick="gecmisiTemizle()" style="background:#444; color:#fff; border:1px solid #666; width:100%; padding:8px;">Geçmişi Sil</button>
     <div id="gecmisListesi" style="margin-top:10px;"></div>
 </div>
 
 <div class="nav-bar">
     <button class="nav-btn active-nav" onclick="nav('diyet', this)">DİYET</button>
     <button class="nav-btn" onclick="nav('spor', this)">SPOR</button>
-    <button class="nav-btn" onclick="nav('market', this)">MARKET</button>
+    <button class="nav-btn" onclick="nav('olcu', this)">ÖLÇÜLER</button>
     <button class="nav-btn" onclick="nav('gecmis', this)">GEÇMİŞ</button>
 </div>
 
 <script>
-    // --- VERİLER ---
+    // --- GÜNCELLENMİŞ VERİLER (Net Ölçülerle) ---
     var kahvaltilar = [
-        { ad: "2 Yumurta + Peynir", malz: "2 Yumurta, Peynir, Zeytin, Yeşillik" },
-        { ad: "Yulaf Lapası", malz: "Yoğurt, Yulaf, Elma, Tarçın" },
-        { ad: "Menemen", malz: "Yumurta, Domates, Biber, 1 Ekmek" },
-        { ad: "Haşlanmış Yumurta Salatası", malz: "2 Yumurta, Marul, Limon, Pulbiber" }
+        { 
+            ad: "2 Yumurta + Peynir", 
+            malz: "<span class='olcu'>2 Adet</span> Haşlanmış Yumurta<br><span class='olcu'>1 Kibrit Kutusu (30gr)</span> Beyaz Peynir<br><span class='olcu'>5 Adet</span> Zeytin<br><span class='olcu'>Bolca</span> Yeşillik" 
+        },
+        { 
+            ad: "Yulaf Lapası", 
+            malz: "<span class='olcu'>4 Yemek Kaşığı</span> Yoğurt<br><span class='olcu'>3 Yemek Kaşığı</span> Yulaf Ezmesi<br><span class='olcu'>1 Orta Boy</span> Elma (Rende)<br><span class='olcu'>1 Çay Kaşığı</span> Tarçın" 
+        },
+        { 
+            ad: "Menemen", 
+            malz: "<span class='olcu'>2 Adet</span> Yumurta<br><span class='olcu'>2 Orta Boy</span> Domates<br><span class='olcu'>2 Adet</span> Sivri Biber<br><span class='olcu'>1 İnce Dilim</span> Tam Buğday Ekmek" 
+        },
+        { 
+            ad: "Haşlanmış Yumurta Salatası", 
+            malz: "<span class='olcu'>2 Adet</span> Haşlanmış Yumurta<br><span class='olcu'>3-4 Yaprak</span> Marul<br><span class='olcu'>Yarım</span> Limon<br><span class='olcu'>1 Çay Kaşığı</span> Zeytinyağı" 
+        }
     ];
+
     var ogleler = [
-        { ad: "Tavuklu Bulgur", malz: "150gr Tavuk, 4 kaşık Bulgur, Salata" },
-        { ad: "Kuru Fasulye & Yoğurt", malz: "Kuru Fasulye, Yoğurt (Ekmek yok)" },
-        { ad: "Ton Balıklı Salata", malz: "Ton balığı, Göbek marul, Mısır yok" }
+        { 
+            ad: "Tavuklu Bulgur", 
+            malz: "<span class='olcu'>150 gr (Avuç içi kadar)</span> Tavuk Göğsü<br><span class='olcu'>4 Yemek Kaşığı</span> Pişmiş Bulgur<br><span class='olcu'>1 Kase</span> Yağsız Salata" 
+        },
+        { 
+            ad: "Kuru Fasulye & Yoğurt", 
+            malz: "<span class='olcu'>1 Dolu Tabak</span> Kuru Fasulye (Susuz)<br><span class='olcu'>1 Kase (200ml)</span> Yoğurt<br>(Ekmek YOK)" 
+        },
+        { 
+            ad: "Ton Balıklı Salata", 
+            malz: "<span class='olcu'>1 Kutu (160gr)</span> Ton Balığı (Yağı süzülmüş)<br><span class='olcu'>Bolca</span> Marul, Roka<br><span class='olcu'>1 Dilim</span> Ekmek" 
+        }
     ];
+
     var ikindiler = [
-        { ad: "Sütlü Kahve & Badem", malz: "Süt, Türk Kahvesi, 10 Badem" },
-        { ad: "Meyve & Kefir", malz: "1 Elma/Muz, Sade Kefir" },
-        { ad: "Leblebi & Yeşil Çay", malz: "Sarı Leblebi, Yeşil Çay" }
+        { 
+            ad: "Sütlü Kahve & Badem", 
+            malz: "<span class='olcu'>1 Fincan</span> Şekersiz Sütlü Kahve<br><span class='olcu'>10 Adet</span> Çiğ Badem" 
+        },
+        { 
+            ad: "Meyve & Kefir", 
+            malz: "<span class='olcu'>1 Adet</span> Muz veya Elma<br><span class='olcu'>1 Su Bardağı</span> Sade Kefir" 
+        },
+        { 
+            ad: "Leblebi & Yeşil Çay", 
+            malz: "<span class='olcu'>1 Çay Bardağı</span> Sarı Leblebi<br><span class='olcu'>1 Büyük Kupa</span> Yeşil Çay" 
+        }
     ];
+
     var aksamlar = [
-        { ad: "Sebze Yemeği (Ekmeksiz)", malz: "Ispanak/Pırasa vb., Yoğurt" },
-        { ad: "Çorba & Salata", malz: "Mercimek Çorbası, Peynirli Salata" },
-        { ad: "Izgara Köfte", malz: "Köfte, Köz Biber, Roka" }
+        { 
+            ad: "Sebze Yemeği", 
+            malz: "<span class='olcu'>8-10 Kaşık</span> Sebze Yemeği (Ispanak/Pırasa)<br><span class='olcu'>1 Kase</span> Yoğurt<br>(Ekmek YOK)" 
+        },
+        { 
+            ad: "Çorba & Salata", 
+            malz: "<span class='olcu'>2 Kepçe</span> Mercimek Çorbası<br><span class='olcu'>1 Büyük Kase</span> Salata + <span class='olcu'>30gr</span> Peynir" 
+        },
+        { 
+            ad: "Izgara Köfte", 
+            malz: "<span class='olcu'>4-5 Adet</span> Köfte<br><span class='olcu'>2 Adet</span> Közlenmiş Biber<br>Bol Roka" 
+        }
     ];
     
     var egzersizler = [
-        {name: "Oturarak Omuz Press", set: "3x12"},
-        {name: "Dambıl Kürek", set: "3x12"},
-        {name: "Yerde Göğüs Press", set: "3x15"},
-        {name: "Köprü (Kalça)", set: "3x15"},
-        {name: "Yavaş Squat (Koltuk)", set: "3x10"},
-        {name: "Yürüyüş", set: "30 Dk"}
+        {name: "Oturarak Omuz Press", set: "3 set x 12 tekrar"},
+        {name: "Dambıl Kürek", set: "3 set x 12 tekrar"},
+        {name: "Yerde Göğüs Press", set: "3 set x 15 tekrar"},
+        {name: "Köprü (Kalça)", set: "3 set x 15 tekrar"},
+        {name: "Yavaş Squat (Koltuk)", set: "3 set x 10 tekrar"},
+        {name: "Yürüyüş", set: "En az 30 Dakika"}
     ];
 
     // --- SİSTEM ---
@@ -124,7 +164,6 @@
 
     function planOlustur() {
         var bugun = new Date().toDateString();
-        // Eğer bugün zaten plan varsa onu yükle, yoksa yeni oluştur
         if(localStorage.getItem("aktifTarih") === bugun && localStorage.getItem("aktifPlan")) {
             aktifPlan = JSON.parse(localStorage.getItem("aktifPlan"));
         } else {
@@ -151,12 +190,12 @@
         html += kartYarat("AKŞAM", aktifPlan.a.ad);
         document.getElementById("gunlukMenu").innerHTML = html;
 
-        var marketHtml = "";
-        marketHtml += listeYarat(aktifPlan.k.malz);
-        marketHtml += listeYarat(aktifPlan.o.malz);
-        marketHtml += listeYarat(aktifPlan.i.malz);
-        marketHtml += listeYarat(aktifPlan.a.malz);
-        document.getElementById("alisverisListesi").innerHTML = marketHtml;
+        var olcuHtml = "";
+        olcuHtml += listeYarat("KAHVALTI MALZEMELERİ", aktifPlan.k.malz);
+        olcuHtml += listeYarat("ÖĞLE MALZEMELERİ", aktifPlan.o.malz);
+        olcuHtml += listeYarat("İKİNDİ MALZEMELERİ", aktifPlan.i.malz);
+        olcuHtml += listeYarat("AKŞAM MALZEMELERİ", aktifPlan.a.malz);
+        document.getElementById("olcuListesi").innerHTML = olcuHtml;
         
         sporListesiYarat();
     }
@@ -165,14 +204,14 @@
         return "<div class='item' onclick='check(this)'><span class='check-box'></span><b>"+baslik+":</b> "+icerik+"</div>";
     }
     
-    function listeYarat(icerik) {
-        return "<div class='item' onclick='check(this)'><span class='check-box'></span>"+icerik+"</div>";
+    function listeYarat(baslik, icerik) {
+        return "<div class='item' onclick='check(this)'><div style='margin-bottom:5px; border-bottom:1px dashed #555; padding-bottom:3px; color:#aaa; font-size:11px;'>" + baslik + "</div><span class='check-box'></span>"+icerik+"</div>";
     }
 
     function sporListesiYarat() {
         var html = "";
         for(var i=0; i<egzersizler.length; i++) {
-            html += "<div class='item' onclick='check(this)'><span class='check-box'></span><b>"+egzersizler[i].name+"</b> ("+egzersizler[i].set+")</div>";
+            html += "<div class='item' onclick='check(this)'><span class='check-box'></span><b>"+egzersizler[i].name+"</b><br><span style='color:#ffcc00; font-size:12px'>"+egzersizler[i].set+"</span></div>";
         }
         document.getElementById("antrenmanListesi").innerHTML = html;
     }
@@ -190,17 +229,10 @@
 
     // --- GEÇMİŞ VE TAKİP ---
     function gunuBitir() {
-        if(!confirm("Bugünü tamamladın mı? Kayıt altına alınıp yarın için yeni plan yapılacak.")) return;
-        
+        if(!confirm("Bugünü tamamladın mı?")) return;
         var gecmis = JSON.parse(localStorage.getItem("diyetGecmisi") || "[]");
-        gecmis.unshift({ // Başa ekle
-            tarih: aktifPlan.tarih,
-            ozet: aktifPlan.k.ad + ", " + aktifPlan.a.ad
-        });
-        
+        gecmis.unshift({ tarih: aktifPlan.tarih, ozet: aktifPlan.k.ad + " ... " + aktifPlan.a.ad });
         localStorage.setItem("diyetGecmisi", JSON.stringify(gecmis));
-        
-        // Yarın için tarihi sıfırla ve sayfayı yenile
         localStorage.removeItem("aktifTarih");
         location.reload();
     }
@@ -209,33 +241,14 @@
         var gecmis = JSON.parse(localStorage.getItem("diyetGecmisi") || "[]");
         var html = "";
         if(gecmis.length == 0) html = "<div style='color:#777;text-align:center'>Henüz kayıt yok.</div>";
-        
         for(var i=0; i<gecmis.length; i++) {
-            html += "<div class='history-item'><span class='history-date'>"+gecmis[i].tarih+"</span>Tamamlanan: "+gecmis[i].ozet+"</div>";
+            html += "<div class='history-item'><span class='history-date'>"+gecmis[i].tarih+"</span>"+gecmis[i].ozet+"</div>";
         }
         document.getElementById("gecmisListesi").innerHTML = html;
     }
-
+    
     function gecmisiTemizle() {
-        if(confirm("Tüm geçmiş silinsin mi?")) {
-            localStorage.removeItem("diyetGecmisi");
-            gecmisiGetir();
-        }
-    }
-
-    // --- BİLDİRİMLER (Sadece Modern Android İçin) ---
-    function bildirimIzniIste() {
-        if (!("Notification" in window)) {
-            alert("Android 2.3 bu özelliği desteklemiyor. Lütfen telefonun saat uygulamasından alarm kur.");
-        } else {
-            Notification.requestPermission().then(function (permission) {
-                if (permission === "granted") {
-                    new Notification("Harika!", { body: "Bildirimler açıldı. Yemek saatlerinde hatırlatacağım." });
-                    // Not: Web sayfaları kapalıyken bildirim atamaz.
-                    // Bu yüzden sadece sayfa açıkken çalışır.
-                }
-            });
-        }
+        if(confirm("Geçmiş silinsin mi?")) { localStorage.removeItem("diyetGecmisi"); gecmisiGetir(); }
     }
 
     window.onload = planOlustur;
