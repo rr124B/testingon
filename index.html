@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Diyet & Spor Koçu</title>
 <style>
-    /* Android 2.3 Uyumlu Basit CSS */
+    /* Android 2.3 Uyumlu CSS */
     body { font-family: sans-serif; background-color: #222; color: #eee; margin: 0; padding: 5px; }
     h1 { font-size: 18px; text-align: center; color: #ff9900; margin-bottom: 5px; }
     button { width: 100%; padding: 10px; margin-bottom: 5px; background: #444; color: #fff; border: 1px solid #666; font-weight: bold; font-size: 16px; border-radius: 5px; }
@@ -17,11 +17,12 @@
     .check-box { display: inline-block; width: 20px; height: 20px; background: #eee; margin-right: 10px; vertical-align: middle; border-radius: 3px; }
     .checked { background: #00cc00; }
     #bildirim { background: #800000; padding: 5px; text-align: center; font-size: 12px; margin-bottom: 5px; display:none;}
+    .malzeme-detay { color: #aaa; font-size: 12px; display: block; margin-left: 30px; }
 </style>
 </head>
 <body>
 
-<h1>Kişisel Koç</h1>
+<h1>Kişisel Koç v1.1</h1>
 
 <div style="text-align:center;">
     <button class="tab-btn active-tab" onclick="openTab('diyet')">Diyet</button>
@@ -42,32 +43,33 @@
 </div>
 
 <div id="market" class="content">
-    <h3>Bugünün İhtiyaçları</h3>
+    <h3>Bugünün Malzemeleri</h3>
     <div id="alisverisListesi"></div>
 </div>
 
 <script>
-    // VERİ TABANI (Senin Diyet Listen)
+    // GÜNCELLENMİŞ VERİ TABANI (Menü + Malzemeler)
     var kahvaltilar = [
-        "2 Yumurta + Peynir + 5 Zeytin + Yeşillik",
-        "Yoğurt + Yulaf + Elma Rendesi + Tarçın",
-        "Menemen + 1 Dilim Ekmek + Salatalık"
+        { ad: "2 Yumurta + Peynir + Zeytin", malz: "2 Yumurta, Beyaz Peynir, 5 Zeytin, Yeşillik, 1 dilim Tam Buğday Ekmek" },
+        { ad: "Yoğurt + Yulaf + Elma", malz: "1 kase Yoğurt, Yulaf ezmesi, 1 Elma, Tarçın" },
+        { ad: "Menemen + Ekmek", malz: "2 Yumurta, Domates, Biber, 1 dilim Ekmek, Salatalık" }
     ];
     var ogleler = [
-        "150gr Tavuk/Köfte + 4 kaşık Bulgur",
-        "Bakliyat Yemeği (Susuz) + Yoğurt",
-        "Ton Balıklı Salata (Limonlu)"
+        { ad: "Tavuk/Köfte + Bulgur", malz: "150gr Tavuk veya Köfte, Bulgur, Salata Malzemesi" },
+        { ad: "Bakliyat Yemeği + Yoğurt", malz: "Kuru Fasulye/Nohut/Mercimek, Yoğurt" },
+        { ad: "Ton Balıklı Salata", malz: "1 kutu Ton Balığı, Marul, Roka, Limon" }
     ];
     var ikindiler = [
-        "Sütlü Kahve + 10 Çiğ Badem",
-        "1 Meyve + 1 Bardak Kefir",
-        "2 Ceviz + 2 Kuru Kayısı + Yeşil Çay"
+        { ad: "Sütlü Kahve + Badem", malz: "Süt, Kahve, 10 adet Çiğ Badem" },
+        { ad: "Meyve + Kefir", malz: "1 adet Muz/Portakal, 1 şişe Kefir" },
+        { ad: "Ceviz + Kuru Kayısı + Çay", malz: "2 tam Ceviz, 2 Kuru Kayısı, Yeşil Çay" }
     ];
     var aksamlar = [
-        "Zeytinyağlı Sebze + Yoğurt (Ekmek YOK)",
-        "Büyük Kase Çorba + Salata",
-        "Fırın Tavuk/Balık + Roka Salata"
+        { ad: "Zeytinyağlı Sebze + Yoğurt", malz: "Mevsim Sebzesi (Pırasa/Ispanak vb.), Zeytinyağı, Yoğurt" },
+        { ad: "Çorba + Salata", malz: "Mercimek veya Sebze Çorbası, Peynir, Salata Malzemesi" },
+        { ad: "Fırın Tavuk/Balık", malz: "Tavuk veya Balık, Roka, Limon" }
     ];
+    
     var serbest = "Acıkırsan: Salatalık, Leblebi veya Sade Soda+Yoğurt";
 
     var egzersizler = [
@@ -88,7 +90,6 @@
         for (i = 0; i < btn.length; i++) { btn[i].className = "tab-btn"; }
         document.getElementById(tabName).style.display = "block";
         
-        // Buton rengini ayarla (basit yöntem)
         if(tabName == 'diyet') btn[0].className += " active-tab";
         if(tabName == 'spor') btn[1].className += " active-tab";
         if(tabName == 'market') btn[2].className += " active-tab";
@@ -106,24 +107,23 @@
             a: rastgeleSec(aksamlar)
         };
         
-        // Hafızaya Kaydet (Android 2.3 browser destekler)
         if (typeof(Storage) !== "undefined") {
-            localStorage.setItem("gunlukPlan", JSON.stringify(plan));
+            localStorage.setItem("gunlukPlanObj", JSON.stringify(plan));
             localStorage.setItem("tarih", new Date().toDateString());
         }
         
         ekranaYaz(plan);
         marketListesiOlustur(plan);
         renderSpor();
-        alert("Yeni menü oluşturuldu! Markete bakmayı unutma.");
+        alert("Menü güncellendi! Malzemeler listelendi.");
     }
 
     function ekranaYaz(plan) {
         var html = "";
-        html += makeItem("KAHVALTI", plan.k);
-        html += makeItem("ÖĞLE", plan.o);
-        html += makeItem("İKİNDİ", plan.i);
-        html += makeItem("AKŞAM", plan.a);
+        html += makeItem("KAHVALTI", plan.k.ad);
+        html += makeItem("ÖĞLE", plan.o.ad);
+        html += makeItem("İKİNDİ", plan.i.ad);
+        html += makeItem("AKŞAM", plan.a.ad);
         html += "<div class='item' style='color:#ff9900'><b>SERBEST:</b> " + serbest + "</div>";
         document.getElementById("gunlukMenu").innerHTML = html;
     }
@@ -135,13 +135,21 @@
     }
 
     function marketListesiOlustur(plan) {
-        // Basitçe o günkü yemekleri listeler
-        var html = "<div class='item'><i>Bugünkü menü için gerekenler:</i></div>";
-        html += "<div class='item'>• " + plan.k + "</div>";
-        html += "<div class='item'>• " + plan.o + "</div>";
-        html += "<div class='item'>• " + plan.i + "</div>";
-        html += "<div class='item'>• " + plan.a + "</div>";
+        // ARTIK BURASI MENÜ ADINI DEĞİL, MALZEMELERİ ÇEKİYOR
+        var html = "<div class='item' style='color:#ff9900'><i>Eksikleri işaretle:</i></div>";
+        
+        // Malzemeleri birleştirip alt alta yazdırıyoruz
+        html += listeElemani(plan.k.malz);
+        html += listeElemani(plan.o.malz);
+        html += listeElemani(plan.i.malz);
+        html += listeElemani(plan.a.malz);
+        
         document.getElementById("alisverisListesi").innerHTML = html;
+    }
+    
+    function listeElemani(text) {
+        return "<div class='item' onclick='toggleCheck(this)'>" +
+               "<span class='check-box'></span>" + text + "</div>";
     }
 
     function renderSpor() {
@@ -158,21 +166,22 @@
         var box = element.getElementsByClassName("check-box")[0];
         if(box.className.indexOf("checked") == -1) {
             box.className += " checked";
+            element.style.color = "#777"; // İşaretlenince rengi solsun
         } else {
             box.className = box.className.replace(" checked", "");
+            element.style.color = "#eee";
         }
     }
 
-    // Uygulama Açıldığında
     window.onload = function() {
-        // Eski kaydı kontrol et
-        if (typeof(Storage) !== "undefined" && localStorage.getItem("gunlukPlan")) {
-            var kayitliPlan = JSON.parse(localStorage.getItem("gunlukPlan"));
+        // Eski kayıt varsa yükle, yoksa yeni oluştur
+        if (typeof(Storage) !== "undefined" && localStorage.getItem("gunlukPlanObj")) {
+            // NOT: Eski versiyonda "gunlukPlan" kullanıyorduk, çakışmasın diye adını "gunlukPlanObj" yaptım.
+            var kayitliPlan = JSON.parse(localStorage.getItem("gunlukPlanObj"));
             ekranaYaz(kayitliPlan);
             marketListesiOlustur(kayitliPlan);
             renderSpor();
             
-            // Tarih kontrolü (Ertesi gün mü?)
             var eskiTarih = localStorage.getItem("tarih");
             var bugun = new Date().toDateString();
             if(eskiTarih != bugun) {
