@@ -3,195 +3,242 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Diyet & Spor Koçu</title>
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#222">
+<title>Koç v2</title>
 <style>
-    /* Android 2.3 Uyumlu CSS */
-    body { font-family: sans-serif; background-color: #222; color: #eee; margin: 0; padding: 5px; }
-    h1 { font-size: 18px; text-align: center; color: #ff9900; margin-bottom: 5px; }
-    button { width: 100%; padding: 10px; margin-bottom: 5px; background: #444; color: #fff; border: 1px solid #666; font-weight: bold; font-size: 16px; border-radius: 5px; }
-    button:active { background: #ff9900; color: #000; }
-    .tab-btn { width: 32%; display: inline-block; font-size: 14px; padding: 5px; }
-    .active-tab { background: #ff9900; color: #000; }
-    .content { display: none; background: #333; padding: 10px; border-radius: 5px; margin-top: 5px; }
+    body { font-family: sans-serif; background-color: #222; color: #eee; margin: 0; padding: 5px; padding-bottom: 60px; }
+    h1 { font-size: 18px; text-align: center; color: #ff9900; margin-bottom: 10px; }
+    
+    /* Menü Navigasyon */
+    .nav-bar { position: fixed; bottom: 0; left: 0; width: 100%; background: #444; border-top: 1px solid #666; height: 50px; display: flex; }
+    .nav-btn { flex: 1; background: none; border: none; color: #aaa; font-size: 12px; font-weight: bold; }
+    .active-nav { color: #ff9900; background: #333; }
+
+    .content { display: none; padding: 5px; margin-bottom: 20px; }
+    .show { display: block; }
+
+    /* Kartlar */
+    .card { background: #333; padding: 10px; border-radius: 5px; margin-bottom: 10px; border: 1px solid #444; }
     .item { border-bottom: 1px solid #555; padding: 8px 0; font-size: 14px; }
     .check-box { display: inline-block; width: 20px; height: 20px; background: #eee; margin-right: 10px; vertical-align: middle; border-radius: 3px; }
     .checked { background: #00cc00; }
-    #bildirim { background: #800000; padding: 5px; text-align: center; font-size: 12px; margin-bottom: 5px; display:none;}
-    .malzeme-detay { color: #aaa; font-size: 12px; display: block; margin-left: 30px; }
+    
+    .btn-action { width: 100%; padding: 12px; background: #006600; color: white; border: none; border-radius: 5px; font-size: 16px; margin-top: 5px; }
+    .malzeme-detay { color: #999; font-size: 11px; display: block; margin-left: 30px; margin-top: 2px; }
+    
+    /* Geçmiş Listesi */
+    .history-item { background: #444; padding: 10px; margin-bottom: 5px; border-radius: 3px; font-size: 12px; }
+    .history-date { color: #ff9900; font-weight: bold; border-bottom: 1px solid #666; display: block; margin-bottom: 5px; }
+
+    /* Bildirim Butonu */
+    #notifBtn { background: #004488; margin-bottom: 10px; font-size: 12px; padding: 8px; }
 </style>
 </head>
 <body>
 
-<h1>Kişisel Koç v1.1</h1>
+<h1>KOÇUM v2.0</h1>
 
-<div style="text-align:center;">
-    <button class="tab-btn active-tab" onclick="openTab('diyet')">Diyet</button>
-    <button class="tab-btn" onclick="openTab('spor')">Spor</button>
-    <button class="tab-btn" onclick="openTab('market')">Market</button>
+<div id="sayfa-diyet" class="content show">
+    <button id="notifBtn" onclick="bildirimIzniIste()" class="btn-action">🔔 Bildirimleri Aç (Modern Telefonlar)</button>
+    <div class="card">
+        <div style="text-align:right; font-size:11px; color:#888" id="tarihGostergesi"></div>
+        <div id="gunlukMenu"></div>
+    </div>
+    <button onclick="gunuBitir()" class="btn-action" style="background:#cc0000;">Günü Bitir & Kaydet</button>
 </div>
 
-<div id="bildirim">Su içmeyi unutma! (3.5 Lt)</div>
-
-<div id="diyet" class="content" style="display:block;">
-    <button onclick="yeniGunOlustur()" style="background:#006600;">YENİ GÜN PLANLA</button>
-    <div id="gunlukMenu"></div>
+<div id="sayfa-spor" class="content">
+    <h3>Antrenman</h3>
+    <div class="card" id="antrenmanListesi"></div>
 </div>
 
-<div id="spor" class="content">
-    <h3>Diz Dostu Antrenman</h3>
-    <div id="antrenmanListesi"></div>
+<div id="sayfa-market" class="content">
+    <h3>Malzemeler</h3>
+    <div class="card" id="alisverisListesi"></div>
 </div>
 
-<div id="market" class="content">
-    <h3>Bugünün Malzemeleri</h3>
-    <div id="alisverisListesi"></div>
+<div id="sayfa-gecmis" class="content">
+    <h3>Geçmiş Kayıtlar</h3>
+    <button onclick="gecmisiTemizle()" style="background:#444; color:#fff; border:1px solid #666; width:100%; padding:5px;">Geçmişi Sil</button>
+    <div id="gecmisListesi" style="margin-top:10px;"></div>
+</div>
+
+<div class="nav-bar">
+    <button class="nav-btn active-nav" onclick="nav('diyet', this)">DİYET</button>
+    <button class="nav-btn" onclick="nav('spor', this)">SPOR</button>
+    <button class="nav-btn" onclick="nav('market', this)">MARKET</button>
+    <button class="nav-btn" onclick="nav('gecmis', this)">GEÇMİŞ</button>
 </div>
 
 <script>
-    // GÜNCELLENMİŞ VERİ TABANI (Menü + Malzemeler)
+    // --- VERİLER ---
     var kahvaltilar = [
-        { ad: "2 Yumurta + Peynir + Zeytin", malz: "2 Yumurta, Beyaz Peynir, 5 Zeytin, Yeşillik, 1 dilim Tam Buğday Ekmek" },
-        { ad: "Yoğurt + Yulaf + Elma", malz: "1 kase Yoğurt, Yulaf ezmesi, 1 Elma, Tarçın" },
-        { ad: "Menemen + Ekmek", malz: "2 Yumurta, Domates, Biber, 1 dilim Ekmek, Salatalık" }
+        { ad: "2 Yumurta + Peynir", malz: "2 Yumurta, Peynir, Zeytin, Yeşillik" },
+        { ad: "Yulaf Lapası", malz: "Yoğurt, Yulaf, Elma, Tarçın" },
+        { ad: "Menemen", malz: "Yumurta, Domates, Biber, 1 Ekmek" },
+        { ad: "Haşlanmış Yumurta Salatası", malz: "2 Yumurta, Marul, Limon, Pulbiber" }
     ];
     var ogleler = [
-        { ad: "Tavuk/Köfte + Bulgur", malz: "150gr Tavuk veya Köfte, Bulgur, Salata Malzemesi" },
-        { ad: "Bakliyat Yemeği + Yoğurt", malz: "Kuru Fasulye/Nohut/Mercimek, Yoğurt" },
-        { ad: "Ton Balıklı Salata", malz: "1 kutu Ton Balığı, Marul, Roka, Limon" }
+        { ad: "Tavuklu Bulgur", malz: "150gr Tavuk, 4 kaşık Bulgur, Salata" },
+        { ad: "Kuru Fasulye & Yoğurt", malz: "Kuru Fasulye, Yoğurt (Ekmek yok)" },
+        { ad: "Ton Balıklı Salata", malz: "Ton balığı, Göbek marul, Mısır yok" }
     ];
     var ikindiler = [
-        { ad: "Sütlü Kahve + Badem", malz: "Süt, Kahve, 10 adet Çiğ Badem" },
-        { ad: "Meyve + Kefir", malz: "1 adet Muz/Portakal, 1 şişe Kefir" },
-        { ad: "Ceviz + Kuru Kayısı + Çay", malz: "2 tam Ceviz, 2 Kuru Kayısı, Yeşil Çay" }
+        { ad: "Sütlü Kahve & Badem", malz: "Süt, Türk Kahvesi, 10 Badem" },
+        { ad: "Meyve & Kefir", malz: "1 Elma/Muz, Sade Kefir" },
+        { ad: "Leblebi & Yeşil Çay", malz: "Sarı Leblebi, Yeşil Çay" }
     ];
     var aksamlar = [
-        { ad: "Zeytinyağlı Sebze + Yoğurt", malz: "Mevsim Sebzesi (Pırasa/Ispanak vb.), Zeytinyağı, Yoğurt" },
-        { ad: "Çorba + Salata", malz: "Mercimek veya Sebze Çorbası, Peynir, Salata Malzemesi" },
-        { ad: "Fırın Tavuk/Balık", malz: "Tavuk veya Balık, Roka, Limon" }
+        { ad: "Sebze Yemeği (Ekmeksiz)", malz: "Ispanak/Pırasa vb., Yoğurt" },
+        { ad: "Çorba & Salata", malz: "Mercimek Çorbası, Peynirli Salata" },
+        { ad: "Izgara Köfte", malz: "Köfte, Köz Biber, Roka" }
     ];
     
-    var serbest = "Acıkırsan: Salatalık, Leblebi veya Sade Soda+Yoğurt";
-
     var egzersizler = [
         {name: "Oturarak Omuz Press", set: "3x12"},
-        {name: "Dambıl Kürek (Sırt)", set: "3x12"},
+        {name: "Dambıl Kürek", set: "3x12"},
         {name: "Yerde Göğüs Press", set: "3x15"},
-        {name: "Yerde Köprü (Kalça)", set: "3x15"},
-        {name: "Koltuk Squat (Yavaş)", set: "3x10"},
-        {name: "30 Dk Yürüyüş", set: "Süre"}
+        {name: "Köprü (Kalça)", set: "3x15"},
+        {name: "Yavaş Squat (Koltuk)", set: "3x10"},
+        {name: "Yürüyüş", set: "30 Dk"}
     ];
 
-    // Fonksiyonlar
-    function openTab(tabName) {
-        var i;
-        var x = document.getElementsByClassName("content");
-        var btn = document.getElementsByClassName("tab-btn");
-        for (i = 0; i < x.length; i++) { x[i].style.display = "none"; }
-        for (i = 0; i < btn.length; i++) { btn[i].className = "tab-btn"; }
-        document.getElementById(tabName).style.display = "block";
+    // --- SİSTEM ---
+    var aktifPlan = {};
+
+    function nav(sayfa, btn) {
+        var contents = document.getElementsByClassName("content");
+        for(var i=0; i<contents.length; i++) contents[i].style.display = "none";
+        document.getElementById("sayfa-"+sayfa).style.display = "block";
         
-        if(tabName == 'diyet') btn[0].className += " active-tab";
-        if(tabName == 'spor') btn[1].className += " active-tab";
-        if(tabName == 'market') btn[2].className += " active-tab";
+        var btns = document.getElementsByClassName("nav-btn");
+        for(var i=0; i<btns.length; i++) btns[i].className = "nav-btn";
+        btn.className += " active-nav";
+        
+        if(sayfa === 'gecmis') gecmisiGetir();
     }
 
-    function rastgeleSec(dizi) {
-        return dizi[Math.floor(Math.random() * dizi.length)];
-    }
+    function rastgele(dizi) { return dizi[Math.floor(Math.random() * dizi.length)]; }
 
-    function yeniGunOlustur() {
-        var plan = {
-            k: rastgeleSec(kahvaltilar),
-            o: rastgeleSec(ogleler),
-            i: rastgeleSec(ikindiler),
-            a: rastgeleSec(aksamlar)
-        };
-        
-        if (typeof(Storage) !== "undefined") {
-            localStorage.setItem("gunlukPlanObj", JSON.stringify(plan));
-            localStorage.setItem("tarih", new Date().toDateString());
+    function planOlustur() {
+        var bugun = new Date().toDateString();
+        // Eğer bugün zaten plan varsa onu yükle, yoksa yeni oluştur
+        if(localStorage.getItem("aktifTarih") === bugun && localStorage.getItem("aktifPlan")) {
+            aktifPlan = JSON.parse(localStorage.getItem("aktifPlan"));
+        } else {
+            aktifPlan = {
+                k: rastgele(kahvaltilar),
+                o: rastgele(ogleler),
+                i: rastgele(ikindiler),
+                a: rastgele(aksamlar),
+                tarih: new Date().toLocaleDateString()
+            };
+            localStorage.setItem("aktifPlan", JSON.stringify(aktifPlan));
+            localStorage.setItem("aktifTarih", bugun);
         }
-        
-        ekranaYaz(plan);
-        marketListesiOlustur(plan);
-        renderSpor();
-        alert("Menü güncellendi! Malzemeler listelendi.");
+        arayuzuDoldur();
     }
 
-    function ekranaYaz(plan) {
+    function arayuzuDoldur() {
+        document.getElementById("tarihGostergesi").innerText = aktifPlan.tarih;
+        
         var html = "";
-        html += makeItem("KAHVALTI", plan.k.ad);
-        html += makeItem("ÖĞLE", plan.o.ad);
-        html += makeItem("İKİNDİ", plan.i.ad);
-        html += makeItem("AKŞAM", plan.a.ad);
-        html += "<div class='item' style='color:#ff9900'><b>SERBEST:</b> " + serbest + "</div>";
+        html += kartYarat("KAHVALTI", aktifPlan.k.ad);
+        html += kartYarat("ÖĞLE", aktifPlan.o.ad);
+        html += kartYarat("İKİNDİ", aktifPlan.i.ad);
+        html += kartYarat("AKŞAM", aktifPlan.a.ad);
         document.getElementById("gunlukMenu").innerHTML = html;
+
+        var marketHtml = "";
+        marketHtml += listeYarat(aktifPlan.k.malz);
+        marketHtml += listeYarat(aktifPlan.o.malz);
+        marketHtml += listeYarat(aktifPlan.i.malz);
+        marketHtml += listeYarat(aktifPlan.a.malz);
+        document.getElementById("alisverisListesi").innerHTML = marketHtml;
+        
+        sporListesiYarat();
     }
 
-    function makeItem(baslik, icerik) {
-        return "<div class='item' onclick='toggleCheck(this)'>" +
-               "<span class='check-box'></span>" +
-               "<b>" + baslik + ":</b><br>" + icerik + "</div>";
-    }
-
-    function marketListesiOlustur(plan) {
-        // ARTIK BURASI MENÜ ADINI DEĞİL, MALZEMELERİ ÇEKİYOR
-        var html = "<div class='item' style='color:#ff9900'><i>Eksikleri işaretle:</i></div>";
-        
-        // Malzemeleri birleştirip alt alta yazdırıyoruz
-        html += listeElemani(plan.k.malz);
-        html += listeElemani(plan.o.malz);
-        html += listeElemani(plan.i.malz);
-        html += listeElemani(plan.a.malz);
-        
-        document.getElementById("alisverisListesi").innerHTML = html;
+    function kartYarat(baslik, icerik) {
+        return "<div class='item' onclick='check(this)'><span class='check-box'></span><b>"+baslik+":</b> "+icerik+"</div>";
     }
     
-    function listeElemani(text) {
-        return "<div class='item' onclick='toggleCheck(this)'>" +
-               "<span class='check-box'></span>" + text + "</div>";
+    function listeYarat(icerik) {
+        return "<div class='item' onclick='check(this)'><span class='check-box'></span>"+icerik+"</div>";
     }
 
-    function renderSpor() {
+    function sporListesiYarat() {
         var html = "";
         for(var i=0; i<egzersizler.length; i++) {
-            html += "<div class='item' onclick='toggleCheck(this)'>" + 
-                    "<span class='check-box'></span>" +
-                    "<b>" + egzersizler[i].name + "</b> (" + egzersizler[i].set + ")</div>";
+            html += "<div class='item' onclick='check(this)'><span class='check-box'></span><b>"+egzersizler[i].name+"</b> ("+egzersizler[i].set+")</div>";
         }
         document.getElementById("antrenmanListesi").innerHTML = html;
     }
 
-    function toggleCheck(element) {
-        var box = element.getElementsByClassName("check-box")[0];
+    function check(el) {
+        var box = el.getElementsByClassName("check-box")[0];
         if(box.className.indexOf("checked") == -1) {
             box.className += " checked";
-            element.style.color = "#777"; // İşaretlenince rengi solsun
+            el.style.opacity = "0.5";
         } else {
             box.className = box.className.replace(" checked", "");
-            element.style.color = "#eee";
+            el.style.opacity = "1";
         }
     }
 
-    window.onload = function() {
-        // Eski kayıt varsa yükle, yoksa yeni oluştur
-        if (typeof(Storage) !== "undefined" && localStorage.getItem("gunlukPlanObj")) {
-            // NOT: Eski versiyonda "gunlukPlan" kullanıyorduk, çakışmasın diye adını "gunlukPlanObj" yaptım.
-            var kayitliPlan = JSON.parse(localStorage.getItem("gunlukPlanObj"));
-            ekranaYaz(kayitliPlan);
-            marketListesiOlustur(kayitliPlan);
-            renderSpor();
-            
-            var eskiTarih = localStorage.getItem("tarih");
-            var bugun = new Date().toDateString();
-            if(eskiTarih != bugun) {
-                document.getElementById("bildirim").style.display = "block";
-                document.getElementById("bildirim").innerHTML = "Yeni bir gün! 'Yeni Gün Planla' butonuna bas.";
-            }
-        } else {
-            yeniGunOlustur();
+    // --- GEÇMİŞ VE TAKİP ---
+    function gunuBitir() {
+        if(!confirm("Bugünü tamamladın mı? Kayıt altına alınıp yarın için yeni plan yapılacak.")) return;
+        
+        var gecmis = JSON.parse(localStorage.getItem("diyetGecmisi") || "[]");
+        gecmis.unshift({ // Başa ekle
+            tarih: aktifPlan.tarih,
+            ozet: aktifPlan.k.ad + ", " + aktifPlan.a.ad
+        });
+        
+        localStorage.setItem("diyetGecmisi", JSON.stringify(gecmis));
+        
+        // Yarın için tarihi sıfırla ve sayfayı yenile
+        localStorage.removeItem("aktifTarih");
+        location.reload();
+    }
+
+    function gecmisiGetir() {
+        var gecmis = JSON.parse(localStorage.getItem("diyetGecmisi") || "[]");
+        var html = "";
+        if(gecmis.length == 0) html = "<div style='color:#777;text-align:center'>Henüz kayıt yok.</div>";
+        
+        for(var i=0; i<gecmis.length; i++) {
+            html += "<div class='history-item'><span class='history-date'>"+gecmis[i].tarih+"</span>Tamamlanan: "+gecmis[i].ozet+"</div>";
         }
-    };
+        document.getElementById("gecmisListesi").innerHTML = html;
+    }
+
+    function gecmisiTemizle() {
+        if(confirm("Tüm geçmiş silinsin mi?")) {
+            localStorage.removeItem("diyetGecmisi");
+            gecmisiGetir();
+        }
+    }
+
+    // --- BİLDİRİMLER (Sadece Modern Android İçin) ---
+    function bildirimIzniIste() {
+        if (!("Notification" in window)) {
+            alert("Android 2.3 bu özelliği desteklemiyor. Lütfen telefonun saat uygulamasından alarm kur.");
+        } else {
+            Notification.requestPermission().then(function (permission) {
+                if (permission === "granted") {
+                    new Notification("Harika!", { body: "Bildirimler açıldı. Yemek saatlerinde hatırlatacağım." });
+                    // Not: Web sayfaları kapalıyken bildirim atamaz.
+                    // Bu yüzden sadece sayfa açıkken çalışır.
+                }
+            });
+        }
+    }
+
+    window.onload = planOlustur;
 </script>
 
 </body>
